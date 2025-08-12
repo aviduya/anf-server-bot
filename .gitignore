@@ -1,0 +1,17 @@
+# env / secrets
+.env
+*.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Logging
+.log
+
+# OS
+.ropeproject
+.DS_Store
