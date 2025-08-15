@@ -1,30 +1,49 @@
 import logging
-from logging_config import setup_logging
-
-setup_logging()
-
 import os
-from discord.ext.commands.core import command
 import httpx
 import discord
 from discord import app_commands
 from discord.ext import commands
+from logging_config import setup_logging
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-API_URL = os.getenv("FASTAPI_URL")
+setup_logging()
+log = logging.getLogger(__name__)
+
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+TOKEN = os.getenv("SERVER_TOKEN")
+SERVER_URL = os.getenv("SERVER_URL")
 SHARED = os.getenv("BOT_SHARED_SECRET")
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix=None, intents=intents)
-log = logging.getLogger(__name__)
+
+async def send_command(payload: dict):
+    cmd = payload.get("command")
+    directive = payload.get("directive")
+
+    if not cmd:
+        raise ValueError("Command is missinng.")
+
+    full_cmd = cmd if not directive else f"{cmd} {directive}"
+
+    url = f"{SERVER_URL}/command"
+    body = {"command": full_cmd}
+
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    async with httpx.AsyncClient() as client:
+        result = await client.post(url, json=body, headers=headers)
+        result.raise_for_status()
+        log.usage(f"/{cmd} {directive} was sent to the server.")
+
 
 @bot.event
 async def on_ready():
     await bot.tree.sync()
     log.info(f"Bot Ready!")
-
-def auth_hdr():
-    return {"x-shared-secret": SHARED}
 
 
 @bot.tree.command(name="say", description="Send a server-wide chat message")
@@ -37,14 +56,16 @@ async def say(interaction: discord.Interaction, message: str):
     payload = {"command": "say", "directive": f" {user}: {message}"}
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            r = await client.post(f"{API_URL}/command", json=payload, headers=auth_hdr())
-            r.raise_for_status()
-            log.usage(f"{user} used /say")
+        await send_command(payload)
+    except ValueError as e:
+        await interaction.followup.send(f"Error: Tell Anfernee to look at logs and fix it.", ephemeral=True)
+        log.error(f"Error: {e}")
+        return
     except httpx.HTTPError as e:
-        await interaction.followup.send(f"API error: {e}", ephemeral=True)
+        await interaction.followup.send(f"Error: Tell Anfernee to look at logs and fix it.", ephemeral=True)
+        log.error(f"API error: {e}")
         return
 
     await interaction.followup.send(f"Sent to server: {message}", ephemeral=True)
 
-bot.run(str(TOKEN))
+bot.run(str(DISCORD_TOKEN))

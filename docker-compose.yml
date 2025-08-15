@@ -1,16 +1,4 @@
 services:
-  api:
-    build: ./api
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - GUILD_ID=${GUILD_ID}
-      - SERVER_ID=${SERVER_ID}
-      - SERVER_TOKEN=${SERVER_TOKEN}
-      - SERVER_URL=${SERVER_URL}
-      - FASTAPI_URL=${FASTAPI_URL}
-      - BOT_SHARED_SECRET=${BOT_SHARED_SECRET}
-    restart: unless-stopped
-
   bot:
     build: ./bot
     environment:
@@ -19,8 +7,6 @@ services:
       - SERVER_ID=${SERVER_ID}
       - SERVER_TOKEN=${SERVER_TOKEN}
       - SERVER_URL=${SERVER_URL}
-      - FASTAPI_URL=${FASTAPI_URL}
-      - BOT_SHARED_SECRET=${BOT_SHARED_SECRET}
-    depends_on:
-      - api
+    volumes:
+      - ./bot/logs:/app/logs
     restart: unless-stopped
