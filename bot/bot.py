@@ -3,28 +3,48 @@ from logging_config import setup_logging
 
 setup_logging()
 
+import os
+from discord.ext.commands.core import command
+import httpx
 import discord
 from discord import app_commands
-from config import DISCORD_TOKEN, GUILD_ID, SERVER_TOKEN, SERVER_URL
-from commands import register_all
+from discord.ext import commands
 
+TOKEN = os.getenv("DISCORD_TOKEN")
+API_URL = os.getenv("FASTAPI_URL")
+SHARED = os.getenv("BOT_SHARED_SECRET")
+
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix=None, intents=intents)
 log = logging.getLogger(__name__)
 
-class SlashBot(discord.Client):
-    def __init__(self):
-        super().__init__(intents=discord.Intents.default())
-        self.tree = app_commands.CommandTree(self)
-        self.token = SERVER_TOKEN
-        self.server_url = SERVER_URL
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+    log.info(f"Bot Ready!")
 
-    async def setup_hook(self):
-        guild = discord.Object(id=GUILD_ID)
-        register_all(self.tree, guild, self.server_url, self.token)
-        await self.tree.sync(guild=guild)
+def auth_hdr():
+    return {"x-shared-secret": SHARED}
 
-    async def on_ready(self):
-        log.info("Bot Online")
 
-if __name__ == "__main__":
-    bot = SlashBot()
-    bot.run(DISCORD_TOKEN)
+@bot.tree.command(name="say", description="Send a server-wide chat message")
+@app_commands.describe(message="Message to be sent")
+async def say(interaction: discord.Interaction, message: str):
+    await interaction.response.defer(thinking=True, ephemeral=True)
+    user = interaction.user
+    log.usage(f"{user} invoked: /say")
+
+    payload = {"command": "say", "directive": f" {user}: {message}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.post(f"{API_URL}/command", json=payload, headers=auth_hdr())
+            r.raise_for_status()
+            log.usage(f"{user} used /say")
+    except httpx.HTTPError as e:
+        await interaction.followup.send(f"API error: {e}", ephemeral=True)
+        return
+
+    await interaction.followup.send(f"Sent to server: {message}", ephemeral=True)
+
+bot.run(str(TOKEN))
