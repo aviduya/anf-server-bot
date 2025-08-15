@@ -9,8 +9,6 @@ services:
       - SERVER_URL=${SERVER_URL}
       - FASTAPI_URL=${FASTAPI_URL}
       - BOT_SHARED_SECRET=${BOT_SHARED_SECRET}
-    ports:
-      - "8000:8000"
     restart: unless-stopped
 
   bot:
