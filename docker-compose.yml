@@ -1,14 +1,28 @@
 services:
   api:
     build: ./api
-    env_file: .env
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - GUILD_ID=${GUILD_ID}
+      - SERVER_ID=${SERVER_ID}
+      - SERVER_TOKEN=${SERVER_TOKEN}
+      - SERVER_URL=${SERVER_URL}
+      - FASTAPI_URL=${FASTAPI_URL}
+      - BOT_SHARED_SECRET=${BOT_SHARED_SECRET}
     ports:
       - "8000:8000"
     restart: unless-stopped
 
   bot:
     build: ./bot
-    env_file: .env
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - GUILD_ID=${GUILD_ID}
+      - SERVER_ID=${SERVER_ID}
+      - SERVER_TOKEN=${SERVER_TOKEN}
+      - SERVER_URL=${SERVER_URL}
+      - FASTAPI_URL=${FASTAPI_URL}
+      - BOT_SHARED_SECRET=${BOT_SHARED_SECRET}
     depends_on:
       - api
     restart: unless-stopped
