@@ -1,25 +1,26 @@
-from datetime import date
 import logging
 import os
+from logging.handlers import TimedRotatingFileHandler
+
+USAGE = 25
+logging.addLevelName(USAGE, "USAGE")
+
+def usage(self, msg, *args, **kwargs):
+    if self.isEnabledFor(USAGE):
+        self._log(USAGE, msg, args, **kwargs)
+
+logging.Logger.usage = usage
 
 def setup_logging():
-    os.makedirs('./logs', exist_ok=True)
+    os.makedirs("./logs", exist_ok=True)
 
-    logging.addLevelName(25, 'USAGE')
-
-    def usage(self, message, *args, **kwargs):
-        if self.isEnabledFor(25):
-            self._log(25, message, args, **kwargs)
-
-    logging.Logger.usage = usage
-
+    handler = TimedRotatingFileHandler(
+        "./logs/bot.log", when="midnight", backupCount=7, encoding="utf-8"
+    )
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler('./logs/bot.log'),
-            logging.StreamHandler()
-        ]
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        handlers=[handler, logging.StreamHandler()]
     )
 
-    logging.info("Logging setup complete")
+    return logging.getLogger("bot")
