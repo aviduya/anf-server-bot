@@ -31,12 +31,12 @@ def log_usage(func):
     async def wrapper(*args, **kwargs):
         interaction = kwargs.get("interaction") or (args[0] if args else None)
         user = getattr(getattr(interaction, "user", None), "name", None) or "unknown-user"
-        log.usage(f"{user} invoked {func.__name__}")
+        logging.usage(f"{user} invoked {func.__name__}")
         try:
             result = await func(*args, **kwargs)
-            log.usage(f"{func.__name__} completed for {user}")
+            logging.usage(f"{func.__name__} completed for {user}")
             return result
         except Exception as e:
-            log.error(f"{func.__name__} failed for {user}: {e}")
+            logging.error(f"{func.__name__} failed for {user}: {e}")
             raise
     return wrapper
