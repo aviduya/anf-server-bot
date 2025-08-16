@@ -1,6 +1,7 @@
 import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
+import functools
 
 USAGE = 25
 logging.addLevelName(USAGE, "USAGE")
@@ -24,3 +25,18 @@ def setup_logging():
     )
 
     return logging.getLogger("bot")
+
+def log_usage(func):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        interaction = kwargs.get("interaction") or (args[0] if args else None)
+        user = getattr(getattr(interaction, "user", None), "name", None) or "unknown-user"
+        log.usage(f"{user} invoked {func.__name__}")
+        try:
+            result = await func(*args, **kwargs)
+            log.usage(f"{func.__name__} completed for {user}")
+            return result
+        except Exception as e:
+            log.error(f"{func.__name__} failed for {user}: {e}")
+            raise
+    return wrapper
