@@ -30,6 +30,11 @@ def log_usage(func):
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         interaction = kwargs.get("interaction")
+        if interaction is None:
+            for a in args:
+                if getattr(a, "user", None) is not None:
+                    interaction = a
+                    break
 
         user = getattr(getattr(interaction, "user", None), "name", None) or "unknown-user"
         log.usage(f"{user} invoked {func.__name__}")
