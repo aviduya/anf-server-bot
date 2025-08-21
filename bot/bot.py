@@ -4,13 +4,30 @@ setup_logging()
 import bot_commands as cmd
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 from config import DISCORD_TOKEN, GUILD_ID
 
 log = logging.getLogger(__name__)
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix=None, intents=intents)
+
+async def get_player_count():
+    current_players = cmd.strip_color_codes(cmd.rcon_command("list"))
+    return cmd.parse_user_count(current_players)
+
+@tasks.loop(seconds=60)
+async def presence_loop():
+    try:
+        online = await get_player_count()
+        activity = discord.Activity(
+            type=discord.ActivityType.playing,
+            name=f"Minecraft: {online} online"
+        )
+        status = discord.Status.online if online > 0 else discord.Status.idle
+        await bot.change_presence(status=status, activity=activity)
+    except Exception:
+        await discord.utils.sleep_until(discord.utils.utcnow().replace(microsecond=0))
 
 @bot.tree.command(name="say", description="Send a server-wide chat message")
 @log_usage
@@ -33,7 +50,10 @@ async def on_ready():
     DEV_GUILD = discord.Object(id=GUILD_ID)
     bot.tree.clear_commands(guild=DEV_GUILD)
     await bot.tree.sync(guild=DEV_GUILD)
-    await bot.tree.sync()
+
+    if not presence_loop.is_running():
+        presence_loop.start()
+
     log.info(f"Bot Ready as {bot.user}!")
 
 bot.run(str(DISCORD_TOKEN))
