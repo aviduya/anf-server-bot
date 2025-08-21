@@ -1,12 +1,10 @@
-import httpx, logging
+import httpx
 from player_model import ServerPlayerModel as ServerPlayerStatus
 from dotenv import load_dotenv
 from mcrcon import MCRcon
 from config import TOKEN, SERVER_URL, RCON_PORT, RCON_HOST, RCON_PASSWORD
 import re
 load_dotenv()
-
-log = logging.getLogger(__name__)
 
 headers = {"Authorization": f"Bearer {TOKEN}"}
 
