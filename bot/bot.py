@@ -12,17 +12,13 @@ log = logging.getLogger(__name__)
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix=None, intents=intents)
 
-async def get_player_count():
-    current_players = cmd.strip_color_codes(cmd.rcon_command("list"))
-    return cmd.parse_user_count(current_players)
-
 @tasks.loop(seconds=60)
 async def presence_loop():
     try:
-        online = await get_player_count()
+        online = await cmd.fetch_player_count()
         activity = discord.Activity(
-            type=discord.ActivityType.playing,
-            name=f"Minecraft: {online} online"
+            type=discord.ActivityType.watching,
+            name=f"Minecraft Server: {online} online"
         )
         status = discord.Status.online if online > 0 else discord.Status.idle
         await bot.change_presence(status=status, activity=activity)
@@ -44,6 +40,11 @@ async def list(interaction: discord.Interaction):
 @log_usage
 async def join(interaction: discord.Interaction):
     await cmd.join_server(interaction=interaction)
+
+@bot.tree.command(name="restart", description="Vote to restart the server if performance is slow")
+@log_usage
+async def restart(interaction: discord.Interaction):
+    await cmd.restart_server(interaction=interaction)
 
 @bot.event
 async def on_ready():
