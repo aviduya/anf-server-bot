@@ -1,19 +1,11 @@
-import discord
-import re
-from .cmd_utils import rcon_command, strip_color_codes
+from .cmd_utils import rcon_command, strip_color_codes, fetch_player_count
 import asyncio
 
 def strip_name_from(list) -> list:
     stripped_names = [name.strip() for name in list.split(":", 1)[1].split(",")]
     return stripped_names
 
-def parse_user_count(msg: str) -> int:
-    match = re.search(r"There are (\d+) out of maximum (\d+)", msg)
-    if match:
-        return int(match.group(1))
-    raise ValueError(f"Message not in expected format: {msg}")
-
-async def join_server(interaction: discord.Interaction):
+async def join_server(interaction):
     countdown = 60
 
     await interaction.response.defer(thinking=True, ephemeral=True)
@@ -30,13 +22,13 @@ async def join_server(interaction: discord.Interaction):
 
     rcon_command("whitelist on")
 
-    connected_users = strip_color_codes(rcon_command("list"))
-    if parse_user_count(connected_users) == 0:
+    if await fetch_player_count() == 0:
         await interaction.edit_original_response(
             content="No one joined. Run the command again and join during the window."
         )
         return
 
+    connected_users = strip_color_codes(rcon_command("list"))
     stripped_connected = strip_name_from(connected_users)
     whitelisted_users = strip_name_from(rcon_command("whitelist list"))
 

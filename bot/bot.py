@@ -10,16 +10,12 @@ from config import DISCORD_TOKEN, GUILD_ID
 log = logging.getLogger(__name__)
 
 intents = discord.Intents.default()
-bot = commands.Bot(command_prefix=None, intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-async def get_player_count():
-    current_players = cmd.strip_color_codes(cmd.rcon_command("list"))
-    return cmd.parse_user_count(current_players)
-
-@tasks.loop(seconds=60)
+@tasks.loop(seconds=360)
 async def presence_loop():
     try:
-        online = await get_player_count()
+        online = await cmd.fetch_player_count()
         activity = discord.Activity(
             type=discord.ActivityType.playing,
             name=f"Minecraft: {online} online"
@@ -44,6 +40,11 @@ async def list(interaction: discord.Interaction):
 @log_usage
 async def join(interaction: discord.Interaction):
     await cmd.join_server(interaction=interaction)
+
+@bot.tree.command(name="restart", description="Vote to restart the server if performance is slow")
+@log_usage
+async def restart(interaction: discord.Interaction):
+    await cmd.restart_server(interaction=interaction)
 
 @bot.event
 async def on_ready():
