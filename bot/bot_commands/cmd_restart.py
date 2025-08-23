@@ -1,18 +1,17 @@
 import asyncio
-from .cmd_utils import rcon_command, fetch_player_count, send_command
+from .cmd_utils import fetch_player_count, send_command
 
 async def restart_server(interaction):
     current_users_count = await fetch_player_count()
 
-    # if current_users_count == 0:
-    #     return await interaction.followup.send(
-    #         "No players are online, cannot restart server"
-    #     )
+    if current_users_count == 0:
+        return await interaction.response.send_message(
+            "No one is currently online to vote. The server will automatically restart at 6:00 AM PST."
+        )
 
-    # needed = max(1, current_users_count // 2)
-    needed = 2
+    needed = max(1, current_users_count // 2)
     vote_text = (
-            f"🗳️ **Vote to restart the server!**\n"
+            f"**Vote to restart the server!**\n"
             f"React with 👍 to approve, 👎 to decline.\n"
             f"Needs at least {needed} yes votes."
     )
@@ -33,7 +32,7 @@ async def restart_server(interaction):
 
     if yes_votes >= needed:
         await interaction.followup.send(
-            f"✅ Restart approved with {yes_votes} yes votes (required: {needed}). Restarting Server..."
+            f"Restart approved with {yes_votes} yes votes (required: {needed}). Restarting Server..."
         )
         payload = {"command": "restart"}
         await send_command(payload=payload)

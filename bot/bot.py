@@ -10,15 +10,15 @@ from config import DISCORD_TOKEN, GUILD_ID
 log = logging.getLogger(__name__)
 
 intents = discord.Intents.default()
-bot = commands.Bot(command_prefix=None, intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-@tasks.loop(seconds=60)
+@tasks.loop(seconds=360)
 async def presence_loop():
     try:
         online = await cmd.fetch_player_count()
         activity = discord.Activity(
-            type=discord.ActivityType.watching,
-            name=f"Minecraft Server: {online} online"
+            type=discord.ActivityType.playing,
+            name=f"Minecraft: {online} online"
         )
         status = discord.Status.online if online > 0 else discord.Status.idle
         await bot.change_presence(status=status, activity=activity)
